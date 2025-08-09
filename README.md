@@ -6,14 +6,14 @@
 ---
 
 ## 構成（予定）
-proto-crud-20250809/
-├─ backend/ ← Laravel (API サーバー)
-└─ frontend/ ← Next.js (フロントエンド)
+proto-crud-20250809/  
+├─ backend/ ← Laravel (API サーバー)  
+└─ frontend/ ← Next.js (フロントエンド)  
 
-## 開発環境
-- PHP 8.x / Laravel 11
-- Node.js LTS / Next.js 14
-- SQLite（Gitpod 上で簡易利用）
+## 開発環境  
+- PHP 8.x / Laravel 11  
+- Node.js LTS / Next.js 14  
+- SQLite（Gitpod 上で簡易利用）  
 
 ---
 

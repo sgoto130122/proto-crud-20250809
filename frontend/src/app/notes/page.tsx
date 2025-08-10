@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
-import Modal from "@/components/ui/Modal";
+import NoteCreateModal from "@/app/notes/NoteCreateModal";
 
 type Note = {
   id: number;
@@ -13,27 +13,23 @@ type Note = {
 };
 
 export default function NotesPage() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // 新規追加モーダル
-  const [openNew, setOpenNew] = useState(false);
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [saving, setSaving] = useState(false);
-  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+const [notes, setNotes] = useState<Note[]>([]); // 取得したノートの一覧を保持するステート
+const [loading, setLoading] = useState(true); // 一覧の読み込み中かどうかを管理するステート（ローディング表示の制御用）
+const [openNew, setOpenNew] = useState(false); // 新規作成モーダルの開閉状態を管理するステート（true なら開く）
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL; // Laravel API のベースURL（.env.local から取得）
 
   // 一覧取得
-  const fetchNotes = () => {
+    const fetchNotes = async () => {
     if (!API_BASE) return;
-    setLoading(true);
-    fetch(`${API_BASE}/api/notes`, { cache: "no-store" })
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed to fetch");
-        return r.json();
-      })
-      .then((data) => setNotes(data))
-      .finally(() => setLoading(false));
+      setLoading(true);
+    try {
+      const r = await fetch(`${API_BASE}/api/notes`, { cache: "no-store" });
+      if (!r.ok) throw new Error("Failed to fetch");
+      const data = await r.json();
+      setNotes(data);
+    } finally {
+     setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -41,50 +37,9 @@ export default function NotesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [API_BASE]);
 
-  // 保存（POST）
-  const handleSave = async () => {
-    if (!API_BASE) return;
-    if (!title.trim()) {
-      alert("タイトルを入力してください");
-      return;
-    }
-    setSaving(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/notes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          title,
-          body,
-          // created_by など追加したい場合はここで
-        }),
-      });
-
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(`保存に失敗しました（${res.status}） ${t}`);
-      }
-
-      // 追加後に一覧を再取得して反映
-      await fetchNotes();
-
-      // フォーム初期化 & 閉じる
-      setTitle("");
-      setBody("");
-      setOpenNew(false);
-    } catch (e: any) {
-      alert(e.message ?? "保存に失敗しました");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      {/* ヘッダー */}
+      {/* noteページ内ヘッダー */}
       <div className="sticky top-0 z-10 backdrop-blur border-b border-black/10 dark:border-white/10 bg-background/70">
         <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">Notes</h1>
@@ -141,7 +96,7 @@ export default function NotesPage() {
         )}
 
         {/* ローディング */}
-        {loading && (
+        {/* {loading && (
           <ul className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <li key={i} className="rounded-2xl border border-black/10 dark:border-white/10 p-4 shadow-sm">
@@ -151,47 +106,15 @@ export default function NotesPage() {
               </li>
             ))}
           </ul>
-        )}
+        )} */}
       </div>
 
       {/* 新規作成モーダル */}
-      <Modal open={openNew} title="ノートを追加" onClose={() => !saving && setOpenNew(false)}>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm mb-1">タイトル</label>
-            <input
-              type="text"
-              className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="例) TODO など"
-            />
-          </div>
-          <div>
-            <label className="block text-sm mb-1">本文</label>
-            <textarea
-              className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 min-h-[120px]"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="内容を入力"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="ghost" onClick={() => !saving && setOpenNew(false)}>
-              キャンセル
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleSave}
-              disabled={saving}
-              rightIcon={saving ? <span className="animate-pulse">…</span> : undefined}
-            >
-              保存
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      <NoteCreateModal
+        open={openNew}
+        onClose={() => setOpenNew(false)}
+        fetchNotes={fetchNotes}
+      />
     </div>
   );
 }

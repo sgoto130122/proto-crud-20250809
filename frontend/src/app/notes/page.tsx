@@ -96,7 +96,7 @@ const API_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL; // Laravel API のベ�
         )}
 
         {/* ローディング */}
-        {/* {loading && (
+        {loading && (
           <ul className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <li key={i} className="rounded-2xl border border-black/10 dark:border-white/10 p-4 shadow-sm">
@@ -106,7 +106,9 @@ const API_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL; // Laravel API のベ�
               </li>
             ))}
           </ul>
-        )} */}
+        )}
+
+
       </div>
 
       {/* 新規作成モーダル */}

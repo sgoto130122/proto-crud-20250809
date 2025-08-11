@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Note extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     // テーブル名（複数形と一致していれば省略可）
     protected $table = 'notes';
@@ -23,11 +25,15 @@ class Note extends Model
     // 代入を許可するカラム
     protected $fillable = [
         'title',
-        'content',
-        'created_at',
-        'updated_at'
+        'body',
+        // 'created_at',
+        'created_by',
+        // 'updated_at',
+        'updated_by',
+        'deleted_at',
+        'deleted_by'
     ];
 
     // タイムスタンプ自動管理するかどうか
-    public $timestamps = true;
+    // public $timestamps = true;
 }

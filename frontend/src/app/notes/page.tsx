@@ -4,7 +4,8 @@
 import { useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import NoteCreateModal from "@/app/notes/NoteCreateModal";
-import NoteEditModal from "@/app/notes/NoteEditModal"; // ← 追加
+import NoteEditModal from "@/app/notes/NoteEditModal";
+import NoteDeleteModal from "@/app/notes/NoteDeleteModal";
 
 type Note = {
   id: number;
@@ -20,10 +21,12 @@ export default function NotesPage() {
 
   // 新規作成モーダル
   const [openNew, setOpenNew] = useState(false);
-
   // 編集モーダル用
-  const [openEdit, setOpenEdit] = useState(false);      // ← 追加
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null); // ← 追加
+  const [openEdit, setOpenEdit] = useState(false);
+  // 編集と削除共通
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  // 削除モーダル用
+  const [openDelete, setOpenDelete] = useState(false);
 
   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -51,6 +54,12 @@ export default function NotesPage() {
     setSelectedNote(note);
     setOpenEdit(true);
   };
+
+  // 削除ハンドラ
+  const handleDeleteClick = (note: Note) => {
+    setSelectedNote(note);
+    setOpenDelete(true);
+  };  
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
@@ -99,7 +108,7 @@ export default function NotesPage() {
                       <Button variant="secondary" size="sm" onClick={() => handleEditClick(note)}>
                         編集
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => alert(`Delete ${note.id}: 未実装`)}>
+                      <Button variant="danger" size="sm" onClick={() => handleDeleteClick(note)}>
                         削除
                       </Button>
                     </div>
@@ -139,6 +148,14 @@ export default function NotesPage() {
       <NoteEditModal
         open={openEdit}
         onClose={() => setOpenEdit(false)}
+        fetchNotes={fetchNotes}
+        note={selectedNote}
+      />
+
+      {/* 削除モーダル */}
+      <NoteDeleteModal
+        open={openDelete}
+        onClose={() => setOpenDelete(false)}
         fetchNotes={fetchNotes}
         note={selectedNote}
       />

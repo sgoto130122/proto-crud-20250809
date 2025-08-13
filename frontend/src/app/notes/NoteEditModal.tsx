@@ -1,34 +1,58 @@
-// app/notes/NoteCreateModal.tsx
+// app/notes/NoteEditModal.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 
-type NoteCreateModalProps = {
-  open: boolean;             // モーダル表示フラグ
-  onClose: () => void;        // モーダルを閉じる処理
-  fetchNotes: () => Promise<void>; // 保存後に一覧を再取得する処理
+type Note = {
+  id: number;
+  title: string;
+  body?: string;
 };
 
-export default function NoteCreateModal({ open, onClose, fetchNotes }: NoteCreateModalProps) {
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+type NoteEditModalProps = {
+  open: boolean;                  // モーダル表示フラグ
+  onClose: () => void;            // モーダルを閉じる処理
+  fetchNotes: () => Promise<void>; // 保存後に一覧を再取得する処理（create と同じ形）
+  note: Note | null;              // 編集対象（null のときは保存不可にする）
+};
+
+export default function NoteEditModal({
+  open,
+  onClose,
+  fetchNotes,
+  note,
+}: NoteEditModalProps) {
+  const [title, setTitle] = useState(note?.title ?? "");
+  const [body, setBody] = useState(note?.body ?? "");
   const [saving, setSaving] = useState(false);
 
   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
-  // 保存（POST）
+  // モーダルが開いた/対象が切り替わったタイミングでフォームを同期
+  useEffect(() => {
+    if (open && note) {
+      setTitle(note.title ?? "");
+      setBody(note.body ?? "");
+    }
+  }, [open, note]);
+
+  // 保存（PUT）
   const handleSave = async () => {
     if (!API_BASE) return;
+    if (!note?.id) {
+      alert("編集対象のノートが見つかりません");
+      return;
+    }
     if (!title.trim()) {
       alert("タイトルを入力してください");
       return;
     }
     setSaving(true);
     try {
-      const res = await fetch(`${API_BASE}/api/notes`, {
-        method: "POST",
+      const res = await fetch(`${API_BASE}/api/notes/${note.id}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
@@ -44,9 +68,7 @@ export default function NoteCreateModal({ open, onClose, fetchNotes }: NoteCreat
       // 一覧更新
       await fetchNotes();
 
-      // フォーム初期化 & 閉じる
-      setTitle("");
-      setBody("");
+      // 閉じる
       onClose();
     } catch (e: any) {
       alert(e.message ?? "保存に失敗しました");
@@ -55,8 +77,10 @@ export default function NoteCreateModal({ open, onClose, fetchNotes }: NoteCreat
     }
   };
 
+  const canSave = !!API_BASE && !!note?.id && !saving;
+
   return (
-    <Modal open={open} title="ノートを追加" onClose={() => !saving && onClose()}>
+    <Modal open={open} title="ノートを編集" onClose={() => !saving && onClose()}>
       <div className="space-y-4">
         {/* タイトル入力 */}
         <div>
@@ -66,7 +90,7 @@ export default function NoteCreateModal({ open, onClose, fetchNotes }: NoteCreat
             className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="例) TODO など"
+            placeholder="タイトルを入力"
           />
         </div>
 
@@ -89,7 +113,7 @@ export default function NoteCreateModal({ open, onClose, fetchNotes }: NoteCreat
           <Button
             variant="primary"
             onClick={handleSave}
-            disabled={saving}
+            disabled={!canSave}
             rightIcon={saving ? <span className="animate-pulse">…</span> : undefined}
           >
             保存

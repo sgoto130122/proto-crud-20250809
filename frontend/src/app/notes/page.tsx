@@ -1,8 +1,10 @@
+// app/notes/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import NoteCreateModal from "@/app/notes/NoteCreateModal";
+import NoteEditModal from "@/app/notes/NoteEditModal"; // ← 追加
 
 type Note = {
   id: number;
@@ -13,22 +15,29 @@ type Note = {
 };
 
 export default function NotesPage() {
-const [notes, setNotes] = useState<Note[]>([]); // 取得したノートの一覧を保持するステート
-const [loading, setLoading] = useState(true); // 一覧の読み込み中かどうかを管理するステート（ローディング表示の制御用）
-const [openNew, setOpenNew] = useState(false); // 新規作成モーダルの開閉状態を管理するステート（true なら開く）
-const API_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL; // Laravel API のベースURL（.env.local から取得）
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 新規作成モーダル
+  const [openNew, setOpenNew] = useState(false);
+
+  // 編集モーダル用
+  const [openEdit, setOpenEdit] = useState(false);      // ← 追加
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null); // ← 追加
+
+  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
   // 一覧取得
-    const fetchNotes = async () => {
+  const fetchNotes = async () => {
     if (!API_BASE) return;
-      setLoading(true);
+    setLoading(true);
     try {
       const r = await fetch(`${API_BASE}/api/notes`, { cache: "no-store" });
       if (!r.ok) throw new Error("Failed to fetch");
       const data = await r.json();
       setNotes(data);
     } finally {
-     setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -36,6 +45,12 @@ const API_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL; // Laravel API のベ�
     fetchNotes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [API_BASE]);
+
+  // 編集クリック時：対象ノートを選択してモーダルを開く
+  const handleEditClick = (note: Note) => {
+    setSelectedNote(note);
+    setOpenEdit(true);
+  };
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
@@ -81,8 +96,12 @@ const API_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL; // Laravel API のベ�
                       <p className="mt-1 text-sm opacity-80 line-clamp-2">{note.body}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2 opacity-0 group-hover:opacity-100 transition">
-                      <Button variant="secondary" size="sm" onClick={() => alert(`Edit ${note.id}: 未実装`)}>編集</Button>
-                      <Button variant="danger" size="sm" onClick={() => alert(`Delete ${note.id}: 未実装`)}>削除</Button>
+                      <Button variant="secondary" size="sm" onClick={() => handleEditClick(note)}>
+                        編集
+                      </Button>
+                      <Button variant="danger" size="sm" onClick={() => alert(`Delete ${note.id}: 未実装`)}>
+                        削除
+                      </Button>
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between text-xs opacity-60">
@@ -100,15 +119,13 @@ const API_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL; // Laravel API のベ�
           <ul className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <li key={i} className="rounded-2xl border border-black/10 dark:border-white/10 p-4 shadow-sm">
-                <div className="h-5 w-40 rounded bg-black/10 dark:bg-white/10 mb-3" />
+                <div className="h-5 w-40 rounded bg-black/10 dark:bg.white/10 mb-3" />
                 <div className="h-4 w-full rounded bg-black/10 dark:bg-white/10 mb-2" />
                 <div className="h-4 w-2/3 rounded bg-black/10 dark:bg-white/10" />
               </li>
             ))}
           </ul>
         )}
-
-
       </div>
 
       {/* 新規作成モーダル */}
@@ -116,6 +133,14 @@ const API_BASE = process.env.NEXT_PUBLIC_BACKEND_API_URL; // Laravel API のベ�
         open={openNew}
         onClose={() => setOpenNew(false)}
         fetchNotes={fetchNotes}
+      />
+
+      {/* 編集モーダル */}
+      <NoteEditModal
+        open={openEdit}
+        onClose={() => setOpenEdit(false)}
+        fetchNotes={fetchNotes}
+        note={selectedNote}
       />
     </div>
   );
